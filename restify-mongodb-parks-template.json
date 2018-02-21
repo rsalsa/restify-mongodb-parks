@@ -2,40 +2,163 @@
     "kind": "Template",
     "apiVersion": "v1",
     "metadata": {
-        "name": "restify-mongodb-parks",
+        "name": "parks-app",
         "annotations": {
-            "description": "A single-page client-side map of US National Parks using Nodejs with Restify, and a MongoDB database service (without persistent storage).",
+            "description": "A single-page client-side map of US National Parks using Node.js with Restify, and a MongoDB database service (without persistent storage).",
             "iconClass": "icon-nodejs",
             "tags": "instant-app,nodejs,database,mongodb"
         }
     },
+    "labels": {
+        "template": "parks-app",
+        "application": "national-parks"
+    },
+    "parameters": [
+
+        {
+            "name": "SOURCE_REPOSITORY_URL",
+            "description": "The URL of the repository with your application source code",
+            "value": "https://github.com/rsalsa/restify-mongodb-parks"
+        },
+        {
+            "name": "SOURCE_REPOSITORY_REF",
+            "description": "Set this to a branch name, tag or other ref of your repository if you are not using the default branch",
+            "value": "lab-updates"
+        },
+        {
+            "name": "WEB_SERVICE_NAME",
+            "description": "Front-end Web service name",
+            "value": "parks-app",
+            "required": true
+        },
+        {
+            "name": "DATABASE_SERVICE_NAME",
+            "description": "Database service name (value 'mongodb' currently required for DB autoconfig)",
+            "value": "mongodb",
+            "required": true
+        },
+        {
+            "name": "MONGODB_USER",
+            "description": "Username for MongoDB user that will be used for accessing the database",
+            "generate": "expression",
+            "from": "user[A-Z0-9]{3}",
+            "required": true
+        },
+        {
+            "name": "MONGODB_PASSWORD",
+            "description": "Password for the MongoDB user",
+            "generate": "expression",
+            "from": "[a-zA-Z0-9]{16}",
+            "required": true
+        },
+        {
+            "name": "MONGODB_DATABASE",
+            "description": "Database name",
+            "value": "parks",
+            "required": true
+        },
+        {
+            "name": "MONGODB_ADMIN_PASSWORD",
+            "description": "Password for the database admin user",
+            "generate": "expression",
+            "from": "[a-zA-Z0-9]{16}",
+            "required": true
+        },
+        {
+            "description": "Generic webhook secret",
+            "generate": "expression",
+            "from": "[a-zA-Z0-9]{40}",
+            "name": "GENERIC_WEBHOOK_SECRET"
+        },
+        {
+            "description": "GitHub webhook secret",
+            "generate": "expression",
+            "from": "[a-zA-Z0-9]{40}",
+            "name": "GITHUB_WEBHOOK_SECRET"
+        }
+    ],
     "objects": [
         {
-            "kind": "Service",
+            "kind": "BuildConfig",
             "apiVersion": "v1",
             "metadata": {
-                "name": "${DATABASE_SERVICE_NAME}",
-                "creationTimestamp": null
+                "name": "${WEB_SERVICE_NAME}",
+                "creationTimestamp": null,
+                "labels": {
+                    "app": "${WEB_SERVICE_NAME}"
+                }
             },
             "spec": {
-                "ports": [
+                "triggers": [
                     {
-                        "name": "mongo",
-                        "protocol": "TCP",
-                        "port": 27017,
-                        "targetPort": 27017,
-                        "nodePort": 0
+                        "type": "GitHub",
+                        "github": {
+                            "secret": "${GITHUB_WEBHOOK_SECRET}"
+                        }
+                    },
+                    {
+                        "type": "Generic",
+                        "generic": {
+                            "secret": "${GENERIC_WEBHOOK_SECRET}"
+                        }
+                    },
+                    {
+                        "type": "ConfigChange"
+                    },
+                    {
+                        "type": "ImageChange",
+                        "imageChange": {}
                     }
                 ],
-                "selector": {
-                    "name": "${DATABASE_SERVICE_NAME}"
+                "source": {
+                    "type": "Git",
+                    "git": {
+                        "uri": "${SOURCE_REPOSITORY_URL}",
+                        "ref": "${SOURCE_REPOSITORY_REF}"
+                    }
                 },
-                "portalIP": "",
-                "type": "ClusterIP",
-                "sessionAffinity": "None"
+                "strategy": {
+                    "type": "Source",
+                    "sourceStrategy": {
+                        "from": {
+                            "kind": "ImageStreamTag",
+                            "namespace": "openshift",
+                            "name": "nodejs:0.10"
+                        }
+                    }
+                },
+                "output": {
+                    "to": {
+                        "kind": "ImageStreamTag",
+                        "name": "${WEB_SERVICE_NAME}:latest"
+                    }
+                },
+                "resources": {}
             },
             "status": {
-                "loadBalancer": {}
+                "lastVersion": 0
+            }
+        },
+        {
+            "kind": "ImageStream",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "${WEB_SERVICE_NAME}",
+                "creationTimestamp": null,
+                "labels": {
+                    "app": "${WEB_SERVICE_NAME}"
+                }
+            },
+            "spec": {
+                "dockerImageRepository": "",
+                "tags": [
+                {
+                    "name": "latest"
+                }
+                ]
+            },
+            "status": {
+                "dockerImageRepository": ""
             }
         },
         {
@@ -142,93 +265,19 @@
             "status": {}
         },
         {
-            "kind": "ImageStream",
-            "apiVersion": "v1",
-            "metadata": {
-                "name": "${WEB_SERVICE_NAME}",
-                "creationTimestamp": null,
-                "labels": {
-                    "app": "${WEB_SERVICE_NAME}"
-                }
-            },
-            "spec": {},
-            "status": {
-                "dockerImageRepository": ""
-            }
-        },
-        {
-            "kind": "BuildConfig",
-            "apiVersion": "v1",
-            "metadata": {
-                "name": "${WEB_SERVICE_NAME}",
-                "creationTimestamp": null,
-                "labels": {
-                    "app": "${WEB_SERVICE_NAME}"
-                }
-            },
-            "spec": {
-                "triggers": [
-                    {
-                        "type": "GitHub",
-                        "github": {
-                            "secret": "${GITHUB_WEBHOOK_SECRET}"
-                        }
-                    },
-                    {
-                        "type": "Generic",
-                        "generic": {
-                            "secret": "${GENERIC_WEBHOOK_SECRET}"
-                        }
-                    },
-                    {
-                        "type": "ConfigChange"
-                    },
-                    {
-                        "type": "ImageChange",
-                        "imageChange": {}
-                    }
-                ],
-                "source": {
-                    "type": "Git",
-                    "git": {
-                        "uri": "${SOURCE_REPOSITORY_URL}",
-                        "ref": "${SOURCE_REPOSITORY_REF}"
-                    }
-                },
-                "strategy": {
-                    "type": "Source",
-                    "sourceStrategy": {
-                        "from": {
-                            "kind": "ImageStreamTag",
-                            "namespace": "openshift",
-                            "name": "nodejs:0.10"
-                        }
-                    }
-                },
-                "output": {
-                    "to": {
-                        "kind": "ImageStreamTag",
-                        "name": "${WEB_SERVICE_NAME}:latest"
-                    }
-                },
-                "resources": {}
-            },
-            "status": {
-                "lastVersion": 0
-            }
-        },
-        {
             "kind": "DeploymentConfig",
             "apiVersion": "v1",
             "metadata": {
                 "name": "${WEB_SERVICE_NAME}",
                 "creationTimestamp": null,
                 "labels": {
-                    "app": "${WEB_SERVICE_NAME}"
+                    "app": "${WEB_SERVICE_NAME}",
+                    "deploymentConfig": "${WEB_SERVICE_NAME}"
                 }
             },
             "spec": {
                 "strategy": {
+                    "type": "Recreate",
                     "resources": {}
                 },
                 "triggers": [
@@ -312,6 +361,59 @@
             "status": {}
         },
         {
+            "kind": "Route",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "${WEB_SERVICE_NAME}",
+                "labels": {
+                    "app": "${WEB_SERVICE_NAME}"
+                },
+                "annotations": {
+                    "description": "Route for application's http service"
+                }
+            },
+            "spec": {
+                "host": "${WEB_SERVICE_NAME}", 
+                "to": {
+                    "kind": "Service",
+                    "name": "${WEB_SERVICE_NAME}"
+                },
+                "port": {
+                    "targetPort": "8080"
+                }
+            },
+            "status": {}
+        },
+        {
+            "kind": "Service",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "${DATABASE_SERVICE_NAME}",
+                "creationTimestamp": null
+            },
+            "spec": {
+                "ports": [
+                    {
+                        "name": "mongo",
+                        "protocol": "TCP",
+                        "port": 27017,
+                        "targetPort": 27017,
+                        "nodePort": 0
+                    }
+                ],
+                "selector": {
+                    "name": "${DATABASE_SERVICE_NAME}",
+                    "deploymentConfig": "${DATABASE_SERVICE_NAME}"
+                },
+                "portalIP": "",
+                "type": "ClusterIP",
+                "sessionAffinity": "None"
+            },
+            "status": {
+                "loadBalancer": {}
+            }
+        },
+        {
             "kind": "Service",
             "apiVersion": "v1",
             "metadata": {
@@ -338,91 +440,6 @@
             "status": {
                 "loadBalancer": {}
             }
-        },
-        {
-            "kind": "Route",
-            "apiVersion": "v1",
-            "metadata": {
-                "name": "${WEB_SERVICE_NAME}",
-                "labels": {
-                    "app": "${WEB_SERVICE_NAME}"
-                }
-            },
-            "spec": {
-                "to": {
-                    "kind": "Service",
-                    "name": "${WEB_SERVICE_NAME}"
-                },
-                "port": {
-                    "targetPort": "8080"
-                }
-            },
-            "status": {}
         }
-    ],
-    "parameters": [
-        {
-            "name": "SOURCE_REPOSITORY_URL",
-            "description": "The URL of the repository with your application source code",
-            "value": "https://github.com/ryanj/restify-mongodb-parks"
-        },
-        {
-            "name": "SOURCE_REPOSITORY_REF",
-            "description": "Set this to a branch name, tag or other ref of your repository if you are not using the default branch"
-        },
-        {
-            "name": "WEB_SERVICE_NAME",
-            "description": "Front-end Web service name",
-            "value": "restify",
-            "required": true
-        },
-        {
-            "name": "DATABASE_SERVICE_NAME",
-            "description": "Database service name (value 'mongodb' currently required for DB autoconfig)",
-            "value": "mongodb",
-            "required": true
-        },
-        {
-            "name": "MONGODB_USER",
-            "description": "Username for MongoDB user that will be used for accessing the database",
-            "generate": "expression",
-            "from": "user[A-Z0-9]{3}",
-            "required": true
-        },
-        {
-            "name": "MONGODB_PASSWORD",
-            "description": "Password for the MongoDB user",
-            "generate": "expression",
-            "from": "[a-zA-Z0-9]{16}",
-            "required": true
-        },
-        {
-            "name": "MONGODB_DATABASE",
-            "description": "Database name",
-            "value": "parks",
-            "required": true
-        },
-        {
-            "name": "MONGODB_ADMIN_PASSWORD",
-            "description": "Password for the database admin user",
-            "generate": "expression",
-            "from": "[a-zA-Z0-9]{16}",
-            "required": true
-        },
-        {
-            "description": "Generic webhook secret",
-            "generate": "expression",
-            "from": "[a-zA-Z0-9]{40}",
-            "name": "GENERIC_WEBHOOK_SECRET"
-        },
-        {
-            "description": "GitHub webhook secret",
-            "generate": "expression",
-            "from": "[a-zA-Z0-9]{40}",
-            "name": "GITHUB_WEBHOOK_SECRET"
-        }
-    ],
-    "labels": {
-        "template": "restify-mongodb-parks"
-    }
+    ]
 }
