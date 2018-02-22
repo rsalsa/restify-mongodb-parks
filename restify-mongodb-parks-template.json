@@ -165,44 +165,43 @@
             "kind": "DeploymentConfig",
             "apiVersion": "v1",
             "metadata": {
-                "name": "${DATABASE_SERVICE_NAME}",
-                "creationTimestamp": null
+                "name": "${DATABASE_SERVICE_NAME}"
             },
             "spec": {
+                "replicas": 1,
+                "selector": {
+                    "app": "${WEB_SERVICE_NAME}",
+                    "deploymentconfig": "${DATABASE_SERVICE_NAME}"
+                },
                 "strategy": {
-                    "type": "Recreate",
-                    "resources": {}
+                    "type": "Recreate"
                 },
                 "triggers": [
                     {
+                        "type": "ConfigChange"
+                    },
+                    {
                         "type": "ImageChange",
                         "imageChangeParams": {
-                            "automatic": false,
+                            "automatic": true,
                             "containerNames": [
                                 "mongodb"
                             ],
                             "from": {
                                 "kind": "ImageStreamTag",
-                                "name": "mongodb:latest",
-                                "namespace": "openshift"
-                            },
-                            "lastTriggeredImage": ""
+                                "namespace": "openshift",
+                                "name": "mongodb:latest"
+                            }
                         }
-                    },
-                    {
-                        "type": "ConfigChange"
                     }
                 ],
-                "replicas": 1,
-                "selector": {
-                    "name": "${DATABASE_SERVICE_NAME}"
-                },
                 "template": {
                     "metadata": {
-                        "creationTimestamp": null,
                         "labels": {
-                            "name": "${DATABASE_SERVICE_NAME}"
-                        }
+                            "app": "${WEB_SERVICE_NAME}",
+                            "deploymentconfig": "${DATABASE_SERVICE_NAME}"
+                        },
+                        "name": "${WEB_SERVICE_NAME}-${DATABASE_SERVICE_NAME}"
                     },
                     "spec": {
                         "containers": [
@@ -242,7 +241,6 @@
                                 ],
                                 "terminationMessagePath": "/dev/termination-log",
                                 "imagePullPolicy": "IfNotPresent",
-                                "capabilities": {},
                                 "securityContext": {
                                     "capabilities": {},
                                     "privileged": false
@@ -261,15 +259,13 @@
                         "dnsPolicy": "ClusterFirst"
                     }
                 }
-            },
-            "status": {}
+            }
         },
         {
             "kind": "DeploymentConfig",
             "apiVersion": "v1",
             "metadata": {
                 "name": "${WEB_SERVICE_NAME}",
-                "creationTimestamp": null,
                 "labels": {
                     "app": "${WEB_SERVICE_NAME}",
                     "deploymentConfig": "${WEB_SERVICE_NAME}"
@@ -305,7 +301,6 @@
                 },
                 "template": {
                     "metadata": {
-                        "creationTimestamp": null,
                         "labels": {
                             "app": "${WEB_SERVICE_NAME}",
                             "deploymentconfig": "${WEB_SERVICE_NAME}"
@@ -361,56 +356,24 @@
             "status": {}
         },
         {
-            "kind": "Route",
-            "apiVersion": "v1",
-            "metadata": {
-                "name": "${WEB_SERVICE_NAME}",
-                "labels": {
-                    "app": "${WEB_SERVICE_NAME}"
-                },
-                "annotations": {
-                    "description": "Route for application's http service"
-                }
-            },
-            "spec": {
-                "host": "${WEB_SERVICE_NAME}", 
-                "to": {
-                    "kind": "Service",
-                    "name": "${WEB_SERVICE_NAME}"
-                },
-                "port": {
-                    "targetPort": "8080"
-                }
-            },
-            "status": {}
-        },
-        {
             "kind": "Service",
             "apiVersion": "v1",
             "metadata": {
                 "name": "${DATABASE_SERVICE_NAME}",
-                "creationTimestamp": null
+                "labels": {
+                    "app": "${WEB_SERVICE_NAME}"
+                 }
             },
             "spec": {
                 "ports": [
                     {
-                        "name": "mongo",
-                        "protocol": "TCP",
                         "port": 27017,
-                        "targetPort": 27017,
-                        "nodePort": 0
+                        "targetPort": 27017
                     }
                 ],
                 "selector": {
-                    "name": "${DATABASE_SERVICE_NAME}",
                     "deploymentConfig": "${DATABASE_SERVICE_NAME}"
-                },
-                "portalIP": "",
-                "type": "ClusterIP",
-                "sessionAffinity": "None"
-            },
-            "status": {
-                "loadBalancer": {}
+                }
             }
         },
         {
@@ -418,7 +381,6 @@
             "apiVersion": "v1",
             "metadata": {
                 "name": "${WEB_SERVICE_NAME}",
-                "creationTimestamp": null,
                 "labels": {
                     "app": "${WEB_SERVICE_NAME}"
                 }
@@ -426,19 +388,13 @@
             "spec": {
                 "ports": [
                     {
-                        "name": "8080-tcp",
-                        "protocol": "TCP",
                         "port": 8080,
                         "targetPort": 8080
                     }
                 ],
                 "selector": {
-                    "app": "${WEB_SERVICE_NAME}",
                     "deploymentconfig": "${WEB_SERVICE_NAME}"
                 }
-            },
-            "status": {
-                "loadBalancer": {}
             }
         }
     ]
