@@ -10,8 +10,8 @@
         }
     },
     "labels": {
-        "template": "parks-app",
-        "application": "national-parks"
+        "createdBy": "national-parks-app",
+        "app": "parks-app"
     },
     "parameters": [
 
@@ -82,11 +82,7 @@
             "kind": "BuildConfig",
             "apiVersion": "v1",
             "metadata": {
-                "name": "${WEB_SERVICE_NAME}",
-                "creationTimestamp": null,
-                "labels": {
-                    "app": "${WEB_SERVICE_NAME}"
-                }
+                "name": "${WEB_SERVICE_NAME}"
             },
             "spec": {
                 "triggers": [
@@ -143,11 +139,7 @@
             "kind": "ImageStream",
             "apiVersion": "v1",
             "metadata": {
-                "name": "${WEB_SERVICE_NAME}",
-                "creationTimestamp": null,
-                "labels": {
-                    "app": "${WEB_SERVICE_NAME}"
-                }
+                "name": "${WEB_SERVICE_NAME}"
             },
             "spec": {
                 "dockerImageRepository": "",
@@ -165,41 +157,20 @@
             "kind": "DeploymentConfig",
             "apiVersion": "v1",
             "metadata": {
-                "name": "${DATABASE_SERVICE_NAME}"
+                "name": "${WEB_SERVICE_NAME}-${DATABASE_SERVICE_NAME}"
             },
             "spec": {
                 "replicas": 1,
                 "selector": {
-                    "app": "${WEB_SERVICE_NAME}",
-                    "deploymentconfig": "${DATABASE_SERVICE_NAME}"
+                    "deploymentconfig": "${WEB_SERVICE_NAME}-${DATABASE_SERVICE_NAME}"
                 },
                 "strategy": {
                     "type": "Recreate"
                 },
-                "triggers": [
-                    {
-                        "type": "ConfigChange"
-                    },
-                    {
-                        "type": "ImageChange",
-                        "imageChangeParams": {
-                            "automatic": true,
-                            "containerNames": [
-                                "mongodb"
-                            ],
-                            "from": {
-                                "kind": "ImageStreamTag",
-                                "namespace": "openshift",
-                                "name": "mongodb:latest"
-                            }
-                        }
-                    }
-                ],
                 "template": {
                     "metadata": {
                         "labels": {
-                            "app": "${WEB_SERVICE_NAME}",
-                            "deploymentconfig": "${DATABASE_SERVICE_NAME}"
+                            "deploymentconfig": "${WEB_SERVICE_NAME}-${DATABASE_SERVICE_NAME}"
                         },
                         "name": "${WEB_SERVICE_NAME}-${DATABASE_SERVICE_NAME}"
                     },
@@ -258,7 +229,26 @@
                         "restartPolicy": "Always",
                         "dnsPolicy": "ClusterFirst"
                     }
-                }
+                },
+                "triggers": [
+                    {
+                        "type": "ConfigChange"
+                    },
+                    {
+                        "type": "ImageChange",
+                        "imageChangeParams": {
+                            "automatic": true,
+                            "containerNames": [
+                                "${DATABASE_SERVICE_NAME}"
+                            ],
+                            "from": {
+                                "kind": "ImageStreamTag",
+                                "namespace": "openshift",
+                                "name": "mongodb:latest"
+                            }
+                        }
+                    }
+                ]
             }
         },
         {
@@ -267,7 +257,6 @@
             "metadata": {
                 "name": "${WEB_SERVICE_NAME}",
                 "labels": {
-                    "app": "${WEB_SERVICE_NAME}",
                     "deploymentConfig": "${WEB_SERVICE_NAME}"
                 }
             },
@@ -296,13 +285,11 @@
                 ],
                 "replicas": 1,
                 "selector": {
-                    "app": "${WEB_SERVICE_NAME}",
                     "deploymentconfig": "${WEB_SERVICE_NAME}"
                 },
                 "template": {
                     "metadata": {
                         "labels": {
-                            "app": "${WEB_SERVICE_NAME}",
                             "deploymentconfig": "${WEB_SERVICE_NAME}"
                         }
                     },
@@ -352,17 +339,13 @@
                         ]
                     }
                 }
-            },
-            "status": {}
+            }
         },
         {
             "kind": "Service",
             "apiVersion": "v1",
             "metadata": {
-                "name": "${DATABASE_SERVICE_NAME}",
-                "labels": {
-                    "app": "${WEB_SERVICE_NAME}"
-                 }
+                "name": "${DATABASE_SERVICE_NAME}"
             },
             "spec": {
                 "ports": [
@@ -372,7 +355,7 @@
                     }
                 ],
                 "selector": {
-                    "deploymentConfig": "${DATABASE_SERVICE_NAME}"
+                    "deploymentconfig": "${WEB_SERVICE_NAME}-${DATABASE_SERVICE_NAME}"
                 }
             }
         },
@@ -380,10 +363,7 @@
             "kind": "Service",
             "apiVersion": "v1",
             "metadata": {
-                "name": "${WEB_SERVICE_NAME}",
-                "labels": {
-                    "app": "${WEB_SERVICE_NAME}"
-                }
+                "name": "${WEB_SERVICE_NAME}"
             },
             "spec": {
                 "ports": [
