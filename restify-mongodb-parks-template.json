@@ -23,7 +23,7 @@
         {
             "name": "GIT_REF",
             "description": "Set this to a branch name, tag or other ref of your repository if you are not using the default branch",
-            "value": "east-coast"
+            "value": "west-coast"
         },
         {
             "name": "APP_NAME",
