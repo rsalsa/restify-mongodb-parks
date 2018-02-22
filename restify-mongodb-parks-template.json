@@ -16,17 +16,17 @@
     "parameters": [
 
         {
-            "name": "SOURCE_REPOSITORY_URL",
+            "name": "GIT_URL",
             "description": "The URL of the repository with your application source code",
             "value": "https://github.com/rsalsa/restify-mongodb-parks"
         },
         {
-            "name": "SOURCE_REPOSITORY_REF",
+            "name": "GIT_REF",
             "description": "Set this to a branch name, tag or other ref of your repository if you are not using the default branch",
-            "value": "lab-updates"
+            "value": "east-coast"
         },
         {
-            "name": "WEB_SERVICE_NAME",
+            "name": "APP_NAME",
             "description": "Front-end Web service name",
             "value": "parks-app",
             "required": true
@@ -82,7 +82,7 @@
             "kind": "BuildConfig",
             "apiVersion": "v1",
             "metadata": {
-                "name": "${WEB_SERVICE_NAME}"
+                "name": "${APP_NAME}"
             },
             "spec": {
                 "triggers": [
@@ -109,8 +109,8 @@
                 "source": {
                     "type": "Git",
                     "git": {
-                        "uri": "${SOURCE_REPOSITORY_URL}",
-                        "ref": "${SOURCE_REPOSITORY_REF}"
+                        "uri": "${GIT_URL}",
+                        "ref": "${GIT_REF}"
                     }
                 },
                 "strategy": {
@@ -126,7 +126,7 @@
                 "output": {
                     "to": {
                         "kind": "ImageStreamTag",
-                        "name": "${WEB_SERVICE_NAME}:latest"
+                        "name": "${APP_NAME}:latest"
                     }
                 },
                 "resources": {}
@@ -139,7 +139,7 @@
             "kind": "ImageStream",
             "apiVersion": "v1",
             "metadata": {
-                "name": "${WEB_SERVICE_NAME}"
+                "name": "${APP_NAME}"
             },
             "spec": {
                 "dockerImageRepository": "",
@@ -157,12 +157,12 @@
             "kind": "DeploymentConfig",
             "apiVersion": "v1",
             "metadata": {
-                "name": "${WEB_SERVICE_NAME}-${DATABASE_SERVICE_NAME}"
+                "name": "${APP_NAME}-${DATABASE_SERVICE_NAME}"
             },
             "spec": {
                 "replicas": 1,
                 "selector": {
-                    "deploymentconfig": "${WEB_SERVICE_NAME}-${DATABASE_SERVICE_NAME}"
+                    "deploymentconfig": "${APP_NAME}-${DATABASE_SERVICE_NAME}"
                 },
                 "strategy": {
                     "type": "Recreate"
@@ -170,9 +170,9 @@
                 "template": {
                     "metadata": {
                         "labels": {
-                            "deploymentconfig": "${WEB_SERVICE_NAME}-${DATABASE_SERVICE_NAME}"
+                            "deploymentconfig": "${APP_NAME}-${DATABASE_SERVICE_NAME}"
                         },
-                        "name": "${WEB_SERVICE_NAME}-${DATABASE_SERVICE_NAME}"
+                        "name": "${APP_NAME}-${DATABASE_SERVICE_NAME}"
                     },
                     "spec": {
                         "containers": [
@@ -255,9 +255,9 @@
             "kind": "DeploymentConfig",
             "apiVersion": "v1",
             "metadata": {
-                "name": "${WEB_SERVICE_NAME}",
+                "name": "${APP_NAME}",
                 "labels": {
-                    "deploymentConfig": "${WEB_SERVICE_NAME}"
+                    "deploymentConfig": "${APP_NAME}"
                 }
             },
             "spec": {
@@ -274,36 +274,36 @@
                         "imageChangeParams": {
                             "automatic": true,
                             "containerNames": [
-                                "${WEB_SERVICE_NAME}"
+                                "${APP_NAME}"
                             ],
                             "from": {
                                 "kind": "ImageStreamTag",
-                                "name": "${WEB_SERVICE_NAME}:latest"
+                                "name": "${APP_NAME}:latest"
                             }
                         }
                     }
                 ],
                 "replicas": 1,
                 "selector": {
-                    "deploymentconfig": "${WEB_SERVICE_NAME}"
+                    "deploymentconfig": "${APP_NAME}"
                 },
                 "template": {
                     "metadata": {
                         "labels": {
-                            "deploymentconfig": "${WEB_SERVICE_NAME}"
+                            "deploymentconfig": "${APP_NAME}"
                         }
                     },
                     "spec": {
                         "volumes": [
                             {
-                                "name": "${WEB_SERVICE_NAME}-volume-1",
+                                "name": "${APP_NAME}-volume-1",
                                 "emptyDir": {}
                             }
                         ],
                         "containers": [
                             {
-                                "name": "${WEB_SERVICE_NAME}",
-                                "image": "library/${WEB_SERVICE_NAME}:latest",
+                                "name": "${APP_NAME}",
+                                "image": "library/${APP_NAME}:latest",
                                 "ports": [
                                     {
                                         "containerPort": 8080,
@@ -331,7 +331,7 @@
                                 "resources": {},
                                 "volumeMounts": [
                                     {
-                                        "name": "${WEB_SERVICE_NAME}-volume-1",
+                                        "name": "${APP_NAME}-volume-1",
                                         "mountPath": "/run"
                                     }
                                 ]
@@ -355,7 +355,7 @@
                     }
                 ],
                 "selector": {
-                    "deploymentconfig": "${WEB_SERVICE_NAME}-${DATABASE_SERVICE_NAME}"
+                    "deploymentconfig": "${APP_NAME}-${DATABASE_SERVICE_NAME}"
                 }
             }
         },
@@ -363,7 +363,7 @@
             "kind": "Service",
             "apiVersion": "v1",
             "metadata": {
-                "name": "${WEB_SERVICE_NAME}"
+                "name": "${APP_NAME}"
             },
             "spec": {
                 "ports": [
@@ -373,7 +373,7 @@
                     }
                 ],
                 "selector": {
-                    "deploymentconfig": "${WEB_SERVICE_NAME}"
+                    "deploymentconfig": "${APP_NAME}"
                 }
             }
         }
