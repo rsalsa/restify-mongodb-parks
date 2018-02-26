@@ -2,7 +2,7 @@
     "kind": "Template",
     "apiVersion": "v1",
     "metadata": {
-        "name": "parks-app",
+        "name": "parks-app-no-db",
         "annotations": {
             "description": "A single-page client-side map of US National Parks using Node.js with Restify, and a MongoDB database service (without persistent storage).",
             "iconClass": "icon-nodejs",
@@ -157,104 +157,6 @@
             "kind": "DeploymentConfig",
             "apiVersion": "v1",
             "metadata": {
-                "name": "${APP_NAME}-${DATABASE_SERVICE_NAME}"
-            },
-            "spec": {
-                "replicas": 1,
-                "selector": {
-                    "deploymentconfig": "${APP_NAME}-${DATABASE_SERVICE_NAME}"
-                },
-                "strategy": {
-                    "type": "Recreate"
-                },
-                "template": {
-                    "metadata": {
-                        "labels": {
-                            "deploymentconfig": "${APP_NAME}-${DATABASE_SERVICE_NAME}"
-                        },
-                        "name": "${APP_NAME}-${DATABASE_SERVICE_NAME}"
-                    },
-                    "spec": {
-                        "containers": [
-                            {
-                                "name": "mongodb",
-                                "image": "mongodb",
-                                "ports": [
-                                    {
-                                        "containerPort": 27017,
-                                        "protocol": "TCP"
-                                    }
-                                ],
-                                "env": [
-                                    {
-                                        "name": "MONGODB_USER",
-                                        "value": "${MONGODB_USER}"
-                                    },
-                                    {
-                                        "name": "MONGODB_PASSWORD",
-                                        "value": "${MONGODB_PASSWORD}"
-                                    },
-                                    {
-                                        "name": "MONGODB_DATABASE",
-                                        "value": "${MONGODB_DATABASE}"
-                                    },
-                                    {
-                                        "name": "MONGODB_ADMIN_PASSWORD",
-                                        "value": "${MONGODB_ADMIN_PASSWORD}"
-                                    }
-                                ],
-                                "resources": {},
-                                "volumeMounts": [
-                                    {
-                                        "name": "${DATABASE_SERVICE_NAME}-data",
-                                        "mountPath": "/var/lib/mongodb/data"
-                                    }
-                                ],
-                                "terminationMessagePath": "/dev/termination-log",
-                                "imagePullPolicy": "IfNotPresent",
-                                "securityContext": {
-                                    "capabilities": {},
-                                    "privileged": false
-                                }
-                            }
-                        ],
-                        "volumes": [
-                            {
-                                "name": "${DATABASE_SERVICE_NAME}-data",
-                                "emptyDir": {
-                                    "medium": ""
-                                }
-                            }
-                        ],
-                        "restartPolicy": "Always",
-                        "dnsPolicy": "ClusterFirst"
-                    }
-                },
-                "triggers": [
-                    {
-                        "type": "ConfigChange"
-                    },
-                    {
-                        "type": "ImageChange",
-                        "imageChangeParams": {
-                            "automatic": true,
-                            "containerNames": [
-                                "${DATABASE_SERVICE_NAME}"
-                            ],
-                            "from": {
-                                "kind": "ImageStreamTag",
-                                "namespace": "openshift",
-                                "name": "mongodb:latest"
-                            }
-                        }
-                    }
-                ]
-            }
-        },
-        {
-            "kind": "DeploymentConfig",
-            "apiVersion": "v1",
-            "metadata": {
                 "name": "${APP_NAME}",
                 "labels": {
                     "deploymentConfig": "${APP_NAME}"
@@ -338,24 +240,6 @@
                             }
                         ]
                     }
-                }
-            }
-        },
-        {
-            "kind": "Service",
-            "apiVersion": "v1",
-            "metadata": {
-                "name": "${DATABASE_SERVICE_NAME}"
-            },
-            "spec": {
-                "ports": [
-                    {
-                        "port": 27017,
-                        "targetPort": 27017
-                    }
-                ],
-                "selector": {
-                    "deploymentconfig": "${APP_NAME}-${DATABASE_SERVICE_NAME}"
                 }
             }
         },
